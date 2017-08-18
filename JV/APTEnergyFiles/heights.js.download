@@ -1,0 +1,26 @@
+﻿(function () {
+
+    function fixHeights() {
+        var items = $(".contentlist.heights .list-item"),
+            max = 0;
+
+        items.children(".gutter").css("height", "auto");
+
+        items.each(function (i, e) {
+            var it = $(e),
+                height = it.children(".gutter").innerHeight();
+            if (height > max) {
+                max = height;
+            }
+        });
+
+        items.children(".gutter").innerHeight(max);
+    }
+
+    $(window).on("resize", fixHeights);
+    $(document).ready(function () {
+        $(".contentlist.heights .list-item img").on("load", fixHeights);
+        fixHeights();
+    });
+
+}());

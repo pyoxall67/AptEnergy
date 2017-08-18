@@ -1,0 +1,164 @@
+(function () {
+    "use strict";
+
+    var topLevelLinks = $(".mp-flyoutmenu-container>ul>li>a"),
+    flyouts = $(".flyout-menu"),
+    activeFlyout,
+    timer,
+    closeTimer,
+    isMobile;
+
+    function toggleMobile(evt) {
+        var evtSource = evt.delegateTarget;
+        var childList = $(evtSource).parent().children("ul");
+        if (childList.length) {
+            childList.slideToggle("fast");
+            evt.preventDefault();
+            return false;
+        }
+        return true;
+    }
+
+    function getFlyout(evt) {
+        var evtSource = evt.delegateTarget;
+        var dataId = $(evtSource).attr("data-id"),
+            flyout = $(".flyout-menu[data-id='" + dataId + "']");
+        return flyout;
+    }
+
+    function toggleFlyout(evt) {
+        var flyout = getFlyout(evt);
+        if (flyout.length) {
+            if (activeFlyout && activeFlyout.get(0) !== flyout.get(0)) {
+                activeFlyout.hide();
+            }
+
+            activeFlyout = flyout;
+            flyout.show();
+            evt.stopImmediatePropagation();
+            evt.preventDefault();
+            return false;
+        }
+
+        return true;
+    }
+
+    function menuHandler(evt) {
+        if ($(".mobile-only:visible").length) {
+            return toggleMobile(evt);
+        }
+
+        return toggleFlyout(evt);
+    }
+
+    function closeMenusHandler(evt) {
+        var enclosingMenus =
+            $(evt.target).closest(".flyout-menu").length +
+            $(evt.target).closest(".menu").length;
+
+        if (enclosingMenus || closeTimer) {
+            return;
+        }
+
+        closeMenus();
+    }
+
+    function closeMenus() {
+        closeTimer = setTimeout(function () {
+            $(".flyout-menu").hide();
+        }, 250);
+    }
+
+    function menuEnteredHandler(evt) {
+        var flyout = getFlyout(evt);
+        if (flyout.length) {
+            timer = setTimeout(function () {
+                menuHandler(evt);
+            }, 150);
+        } else {
+            closeMenus();
+        }
+    }
+
+    function menuLeftHandler(evt) {
+        if ($(evt.target).closest(".flyout-menu").length === 0 ||
+            $(evt.target).closest("menu").length === 0) {
+            clearTimeout(timer);
+        }
+    }
+
+    function clearCloseTimeout(evt) {
+        var flyout = getFlyout(evt);
+        if (flyout.length) {
+            clearTimeout(closeTimer);
+            closeTimer = null;
+        }
+    }
+
+    function attachDesktop() {
+        topLevelLinks.on("mouseover", menuEnteredHandler);
+        topLevelLinks.on("mouseout", menuLeftHandler);
+
+        topLevelLinks.on("click", menuHandler);
+        $(document.body).on("click, mousemove", closeMenusHandler);
+
+        topLevelLinks.on("mouseover", clearCloseTimeout);
+        flyouts.on("mouseover", clearCloseTimeout);
+    }
+
+    function detachDesktop() {
+        topLevelLinks.off("mouseover", menuEnteredHandler);
+        topLevelLinks.off("mouseout", menuLeftHandler);
+
+        topLevelLinks.off("click", menuHandler);
+        $(document.body).off("click, mousemove", closeMenusHandler);
+
+        topLevelLinks.off("mouseover", clearCloseTimeout);
+        flyouts.off("mouseover", clearCloseTimeout);
+
+        flyouts.hide();
+    }
+
+    function attachMobile() {
+        topLevelLinks.on("click", toggleMobile);
+    }
+
+    function detachMobile() {
+        topLevelLinks.off("click", toggleMobile);
+    }
+
+    function windowResized() {
+        if ($(".mobile-only:visible").length && !isMobile) {
+            isMobile = true;
+            detachDesktop();
+            attachMobile();
+        } else if ($(".mobile-only:visible").length === 0 && (isMobile || isMobile === undefined)) {
+            isMobile = false;
+            detachMobile();
+            attachDesktop();
+        }
+    }
+
+    $(function() {
+        windowResized();
+        $(window).on("resize", windowResized);
+    });
+
+    // optional for sticky header and menu
+
+    $(window).scroll(function () {
+        if ($(this).scrollTop() > 62) {
+            $("#header").addClass("sticky");
+            $(".mp-flyoutmenu-container").addClass("sticky");
+           
+        }
+        else {
+            $("#header").removeClass("sticky");
+            $(".mp-flyoutmenu-container").removeClass("sticky");
+            
+           
+        }
+    });
+
+
+}());
